@@ -151,6 +151,7 @@ fn get_version_header(header_dir: &Path) -> Option<PathBuf> {
 
 fn get_version_from_headers(header_dir: &Path) -> Option<Version> {
 	let version_hpp = get_version_header(header_dir)?;
+	eprintln!("version_hpp = {version_hpp:?}");
 	let mut major = None;
 	let mut minor = None;
 	let mut revision = None;
@@ -166,12 +167,15 @@ fn get_version_from_headers(header_dir: &Path) -> Option<Version> {
 				match ver_spec {
 					"MAJOR" => {
 						major = Some(version.parse().ok()?);
+						eprintln!("got major: {version:?}");
 					}
 					"MINOR" => {
 						minor = Some(version.parse().ok()?);
+						eprintln!("got minor: {version:?}");
 					}
 					"REVISION" => {
 						revision = Some(version.parse().ok()?);
+						eprintln!("got rev:: {version:?}");
 					}
 					_ => {}
 				}
@@ -217,22 +221,22 @@ fn make_modules(opencv_dir: &Path) -> Result<()> {
 fn build_compiler(opencv: &Library) -> cc::Build {
 	let mut out = cc::Build::new();
 	out.cpp(true)
-		.std("c++14") // clang says error: 'auto' return without trailing return type; deduced return types are a C++14 extension
-		.include(&*SRC_CPP_DIR)
-		.include(&*OUT_DIR)
-		.include(".")
-		// OpenCV warnings
-		.flag_if_supported("-Wno-deprecated-declarations") // declarations marked as CV_DEPRECATED
-		.flag_if_supported("-Wno-deprecated-copy") // implicitly-declared ‘constexpr cv::MatStep::MatStep(const cv::MatStep&)’ is deprecated
-		.flag_if_supported("-Wno-unused-parameter") // unused parameter ‘src’ in virtual void cv::dnn::dnn4_v20211004::ActivationLayer::forwardSlice(const float*, float*, int, size_t, int, int) const
-		.flag_if_supported("-Wno-sign-compare") // comparison of integer expressions of different signedness: ‘size_t’ {aka ‘long unsigned int’} and ‘int’ in bool cv::dnn::dnn4_v20211004::isAllOnes(const MatShape&, int, int)
-		.flag_if_supported("-Wno-comment") // multi-line comment in include/opencv4/opencv2/mcc/ccm.hpp:73:25
-		.flag_if_supported("-Wunused-but-set-variable") // /usr/local/Cellar/opencv@3/3.4.16_10.reinstall/include/opencv2/flann/index_testing.h:249:11: warning: variable 'p1' set but not used
-		// crate warnings
-		.flag_if_supported("-Wno-unused-variable") // ‘cv::CV_VERSION_OCVRS_OVERRIDE’ defined but not used
-		.flag_if_supported("-Wno-ignored-qualifiers") // type qualifiers ignored on function return type in const size_t cv_MatStep_operator___const_int(const cv::MatStep* instance, int i)
-		.flag_if_supported("-Wno-return-type-c-linkage") // warning: 'cv_aruco_CharucoBoard_getChessboardSize_const' has C-linkage specified, but returns user-defined type 'Result<cv::Size>' (aka 'Result<Size_<int> >') which is incompatible with C
-		.flag_if_supported("-Wno-overloaded-virtual");
+        .std("c++14") // clang says error: 'auto' return without trailing return type; deduced return types are a C++14 extension
+        .include(&*SRC_CPP_DIR)
+        .include(&*OUT_DIR)
+        .include(".")
+        // OpenCV warnings
+        .flag_if_supported("-Wno-deprecated-declarations") // declarations marked as CV_DEPRECATED
+        .flag_if_supported("-Wno-deprecated-copy") // implicitly-declared ‘constexpr cv::MatStep::MatStep(const cv::MatStep&)’ is deprecated
+        .flag_if_supported("-Wno-unused-parameter") // unused parameter ‘src’ in virtual void cv::dnn::dnn4_v20211004::ActivationLayer::forwardSlice(const float*, float*, int, size_t, int, int) const
+        .flag_if_supported("-Wno-sign-compare") // comparison of integer expressions of different signedness: ‘size_t’ {aka ‘long unsigned int’} and ‘int’ in bool cv::dnn::dnn4_v20211004::isAllOnes(const MatShape&, int, int)
+        .flag_if_supported("-Wno-comment") // multi-line comment in include/opencv4/opencv2/mcc/ccm.hpp:73:25
+        .flag_if_supported("-Wunused-but-set-variable") // /usr/local/Cellar/opencv@3/3.4.16_10.reinstall/include/opencv2/flann/index_testing.h:249:11: warning: variable 'p1' set but not used
+        // crate warnings
+        .flag_if_supported("-Wno-unused-variable") // ‘cv::CV_VERSION_OCVRS_OVERRIDE’ defined but not used
+        .flag_if_supported("-Wno-ignored-qualifiers") // type qualifiers ignored on function return type in const size_t cv_MatStep_operator___const_int(const cv::MatStep* instance, int i)
+        .flag_if_supported("-Wno-return-type-c-linkage") // warning: 'cv_aruco_CharucoBoard_getChessboardSize_const' has C-linkage specified, but returns user-defined type 'Result<cv::Size>' (aka 'Result<Size_<int> >') which is incompatible with C
+        .flag_if_supported("-Wno-overloaded-virtual");
 
 	opencv.include_paths.iter().for_each(|p| {
 		out.include(p);
@@ -252,15 +256,15 @@ fn build_compiler(opencv: &Library) -> cc::Build {
 			}
 		}
 		out.flag("-EHsc")
-			.flag("-bigobj")
-			.flag("-utf-8")
-			.flag("-wd4996")
-			.flag("-wd5054") // deprecated between enumerations of different types
-			.flag("-wd4190") // has C-linkage specified, but returns UDT 'Result<cv::Rect_<int>>' which is incompatible with C
-			.flag("-wd4702") // core.cpp(386) : unreachable code
-			.flag("-wd4100") // unreferenced formal parameter
-			.flag("-wd4127") // conditional expression is constant
-			.pic(false);
+            .flag("-bigobj")
+            .flag("-utf-8")
+            .flag("-wd4996")
+            .flag("-wd5054") // deprecated between enumerations of different types
+            .flag("-wd4190") // has C-linkage specified, but returns UDT 'Result<cv::Rect_<int>>' which is incompatible with C
+            .flag("-wd4702") // core.cpp(386) : unreachable code
+            .flag("-wd4100") // unreferenced formal parameter
+            .flag("-wd4127") // conditional expression is constant
+            .pic(false);
 	} else {
 		out.flag_if_supported("-Wa,-mbig-obj");
 	}
@@ -364,11 +368,11 @@ fn main() -> Result<()> {
 	if let Some(header_version) = get_version_from_headers(opencv_header_dir) {
 		if header_version != opencv.version {
 			panic!(
-				"OpenCV version from the headers: {header_version} (at {}) must match version of the OpenCV library: {} (include paths: {:?})",
-				opencv_header_dir.display(),
-				opencv.version,
-				opencv.include_paths,
-			);
+                "OpenCV version from the headers: {header_version} (at {}) must match version of the OpenCV library: {} (include paths: {:?})",
+                opencv_header_dir.display(),
+                opencv.version,
+                opencv.include_paths,
+            );
 		}
 		eprintln!(
 			"=== Found OpenCV version: {header_version} in headers located at: {}",

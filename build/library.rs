@@ -117,7 +117,11 @@ impl Library {
 	}
 
 	fn version_from_include_paths(include_paths: impl IntoIterator<Item = impl AsRef<Path>>) -> Option<Version> {
-		include_paths.into_iter().find_map(|x| get_version_from_headers(x.as_ref()))
+		include_paths.into_iter().find_map(|x| {
+			let r = x.as_ref();
+			eprintln!("getting version from path: {r:?}");
+			get_version_from_headers(x.as_ref())
+		})
 	}
 
 	#[inline]
